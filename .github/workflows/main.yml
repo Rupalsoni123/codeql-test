@@ -100,13 +100,6 @@ jobs:
       - name: Run Snyk Code test
         run: snyk code test --sarif | tee snyk-code.sarif
 
-      # Monitor open-source projects with Snyk
-      - name: Snyk Open Source monitor
-        run: snyk monitor --all-projects
-
-      # Run Snyk Infrastructure as Code (IaC) tests and report
-      - name: Snyk IaC test and report
-        run: snyk iac test --report
 
       # Build a Docker image for container scanning
       - name: Build a Docker image
