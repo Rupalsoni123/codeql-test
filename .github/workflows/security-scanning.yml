@@ -1,0 +1,168 @@
+name: Security Scanning Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: '0 0 * * 1'  # Runs weekly on Mondays at midnight UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write # Required for uploading SARIF files
+
+jobs:
+  analyze_codeql:
+    name: Analyze Code with CodeQL
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: .github/codeql/results.sarif
+
+      - name: Upload CodeQL SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .github/codeql/results.sarif
+          token: ${{ secrets.GITHUB_TOKEN }}
+          category: codeql-analysis-unique-category
+          wait-for-processing: true
+
+  bandit_scan:
+    name: Bandit Python Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Bandit
+        run: |
+          pip install bandit
+
+      - name: Run Bandit Security Scan
+        run: bandit -r . -f json -o bandit-report.json
+
+      - name: Upload Bandit Scan Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: bandit-report
+          path: bandit-report.json
+
+  debricked_scan:
+    name: Debricked Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Debricked Scan
+        uses: debricked/actions/docker-scan@v3
+        with:
+          path: .
+        env:
+          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
+
+  snyk_scan:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Snyk CLI to check for security issues
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Install Dependencies
+        run: |
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          elif [ -f "package.json" ]; then
+            npm install
+          fi
+
+      - name: Run Snyk Code test
+        run: snyk code test --sarif | tee snyk-code.sarif
+
+      - name: Snyk Open Source monitor
+        run: snyk monitor --all-projects
+
+      - name: Snyk IaC test and report
+        run: snyk iac test --report
+
+      - name: Build Docker image
+        run: docker build -t your/image-to-test .
+
+      - name: Snyk Container monitor
+        run: snyk container monitor your/image-to-test --file=Dockerfile
+
+      - name: Upload Snyk results
+        uses: actions/upload-artifact@v3
+        with:
+          name: snyk-report
+          path: snyk-code.sarif
+
+  sonarqube_scan:
+    name: SonarQube Security and Quality Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install SonarQube Scanner
+        run: |
+          curl -sSLo sonarqube-scanner.zip https://github.com/SonarSource/sonar-scanner-cli/releases/download/4.6.0.2310/sonar-scanner-cli-4.6.0.2310-linux.zip
+          unzip sonarqube-scanner.zip
+          sudo mv sonar-scanner-4.6.0.2310-linux/bin/sonar-scanner /usr/local/bin/
+        
+      - name: Run SonarQube Scanner
+        run: sonar-scanner -Dsonar.projectKey=my-repo -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      - name: Upload SonarQube Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: sonarqube-report
+          path: sonar-scanner/report.json
+
+  checkmarx_scan:
+    name: Checkmarx Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Checkmarx Scan
+        uses: checkmarx/checkmarx-action@v1
+        with:
+          token: ${{ secrets.CHECKMARX_TOKEN }}
+          project_name: "my-repo"
+          source: "git"
+          scan_type: "SAST"
+
+      - name: Upload Checkmarx Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: checkmarx-report
+          path: checkmarx-report.json
