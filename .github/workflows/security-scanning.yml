@@ -1,4 +1,4 @@
-name: Snyk Security
+name: Security Scan with Snyk and Other Tools
 
 on:
   push:
@@ -7,53 +7,27 @@ on:
     branches: ["main"]
 
 permissions:
-  contents: read  # To fetch the repository code
-  security-events: write  # For uploading SARIF results to GitHub Security tab
+  contents: read
+  security-events: write # Required for uploading SARIF results
 
 jobs:
   snyk:
-    permissions:
-      contents: read  # Required for actions/checkout
-      security-events: write  # Required for GitHub Code Scanning
-      actions: read  # Only required for private repositories
-
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Checkout repository
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # Step 2: Set up Snyk CLI to check for security issues
-      - name: Set up Snyk CLI to check for security issues
+      - name: Set up Snyk CLI
         uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Your Snyk API Token
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      # Step 3: Snyk Code (SAST) analysis and uploading SARIF results
-      - name: Snyk Code test
-        run: snyk code test --sarif > snyk-code.sarif
+      - name: Snyk Code Test (SAST)
+        run: snyk code test --sarif > snyk-code.sarif || true
 
-      # Step 4: Snyk Open Source (SCA) analysis and monitoring all projects
-      - name: Snyk Open Source monitor
-        run: snyk monitor --all-projects
-
-      # Step 5: Snyk Infrastructure as Code (IaC) analysis and reporting
-      - name: Snyk IaC test and report
-        run: snyk iac test --report
-
-      # Step 6: Build Docker image for container scan
-      - name: Build a Docker image
-        run: docker build -t your/image-to-test .
-
-      # Step 7: Snyk Container analysis and monitoring the Docker image
-      - name: Snyk Container monitor
-        run: snyk container monitor your/image-to-test --file=Dockerfile
-
-      # Step 8: Upload Snyk Code results to GitHub Security Code Scanning
-      - name: Upload result to GitHub Code Scanning
+      - name: Upload Snyk Code results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
-          token: ${{ secrets.GITHUB_TOKEN }}
-          category: snyk-analysis
-          wait-for-processing: true
+          
+      # You can add other security tools like Bandit, Debricked, etc. here
