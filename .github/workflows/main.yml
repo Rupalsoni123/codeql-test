@@ -87,7 +87,16 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
-      - name: Snyk Code test
+      # Install dependencies (add this step if needed)
+      - name: Install Dependencies
+        run: |
+          if [ -f "requirements.txt" ]; then
+            pip install -r requirements.txt
+          elif [ -f "package.json" ]; then
+            npm install
+          fi
+
+      - name: Run Snyk Code test
         run: snyk code test --sarif | tee snyk-code.sarif
 
       - name: Snyk Open Source monitor
