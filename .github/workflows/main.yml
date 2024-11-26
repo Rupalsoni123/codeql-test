@@ -1,4 +1,4 @@
-name: CodeQL Analysis and Bandit Scan
+name: CodeQL Analysis, Bandit Scan, and Debricked Security Scan
 
 on:
   push:
@@ -58,3 +58,18 @@ jobs:
           exit_zero: true
           path: "."
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  debricked_scan:
+    name: Debricked Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 7: Checkout the code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 8: Run Debricked Scan
+      - name: Debricked Security Scan
+        uses: debricked/actions@v3
+        env:
+          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
