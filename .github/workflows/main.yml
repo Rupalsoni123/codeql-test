@@ -1,10 +1,12 @@
-name: CodeQL Analysis, Bandit Scan, and Debricked Security Scan
+name: CodeQL Analysis, Bandit Scan, Debricked Security Scan, and Snyk Security Scan
 
 on:
   push:
+    branches: ["main"]
   pull_request:
+    branches: ["main"]
   schedule:
-    - cron: '23 18 * * 2'
+    - cron: '23 18 * * 2'  # Runs weekly on Tuesday at 18:23 UTC
   workflow_dispatch:
 
 permissions:
@@ -17,29 +19,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: python
 
-      # Step 3: Perform CodeQL Analysis and specify the output SARIF file location
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          output: .github/codeql/results.sarif  # This will generate the SARIF file in the specified path
+          output: .github/codeql/results.sarif
 
-      # Step 4: Upload CodeQL SARIF results with a unique category
       - name: Upload CodeQL SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: .github/codeql/results.sarif # Upload the SARIF file generated in the previous step
+          sarif_file: .github/codeql/results.sarif
           token: ${{ secrets.GITHUB_TOKEN }}
-          category: codeql-analysis-unique-category # This makes the upload unique
+          category: codeql-analysis-unique-category
           wait-for-processing: true
 
   bandit_scan:
@@ -47,11 +45,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 5: Checkout the code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 6: Run Bandit Security Scan
       - name: Run Bandit Security Scan
         uses: shundor/python-bandit-scan@9cc5aa4a006482b8a7f91134412df6772dbda22c
         with:
@@ -64,14 +60,50 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 7: Checkout the code
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 8: Run Debricked Scan
       - name: Debricked Security Scan
         uses: debricked/actions/docker-scan@v3
         with:
           path: .
         env:
-          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }} # Ensure your Debricked token is set as a secret in GitHub
+          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
+
+  snyk_scan:
+    name: Snyk Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Snyk CLI to check for security issues
+        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Snyk Code test
+        run: snyk code test --sarif > snyk-code.sarif
+
+      - name: Snyk Open Source monitor
+        run: snyk monitor --all-projects
+
+      - name: Snyk IaC test and report
+        run: snyk iac test --report
+
+      - name: Build a Docker image
+        run: docker build -t your/image-to-test .
+
+      - name: Snyk Container monitor
+        run: snyk container monitor your/image-to-test --file=Dockerfile
+
+      - name: Upload result to GitHub Code Scannings
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-code.sarif
+          token: ${{ secrets.GITHUB_TOKEN }}
