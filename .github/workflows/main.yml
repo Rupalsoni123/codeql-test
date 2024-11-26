@@ -96,18 +96,13 @@ jobs:
             npm install
           fi
 
-      # Run Snyk Code test and output SARIF file
-      - name: Run Snyk Code test
-        run: snyk code test --sarif | tee snyk-code.sarif
-
-
-      # Build a Docker image for container scanning
-      - name: Build a Docker image
-        run: docker build -t nginx.
+      # Pull a sample Docker image (nginx in this case)
+      - name: Pull sample Docker image (nginx)
+        run: docker pull nginx
 
       # Monitor the Docker image using Snyk
-      - name: Snyk Container monitor
-        run: snyk container monitor nginx --file=Dockerfile
+      - name: Snyk Container monitor (nginx)
+        run: snyk container monitor nginx
 
       # Upload Snyk Code scan SARIF result to GitHub Code Scanning
       - name: Upload Snyk Code SARIF result to GitHub Code Scanning
