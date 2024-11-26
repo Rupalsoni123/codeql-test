@@ -70,7 +70,7 @@ jobs:
         env:
           DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
 
-  snyk_scan:
+    snyk_scan:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
     permissions:
@@ -88,7 +88,7 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Snyk Code test
-        run: snyk code test --sarif > snyk-code.sarif
+        run: snyk code test --sarif | tee snyk-code.sarif
 
       - name: Snyk Open Source monitor
         run: snyk monitor --all-projects
