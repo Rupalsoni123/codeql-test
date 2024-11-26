@@ -30,7 +30,7 @@ def world_writable_file():
 
 # Example Usage (with intentionally unsafe behavior)
 if __name__ == "__main__":
-    user_input = input("Enter a command: ")  # Command injection
+    user_input = input("Enter a commands: ")  # Command injection
     command_injection(user_input)
 
     password_hash = insecure_password_hash("mysecretpassword")
