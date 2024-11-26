@@ -70,7 +70,7 @@ jobs:
         env:
           DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
 
-    snyk_scan:
+  snyk_scan:
     name: Snyk Security Scan
     runs-on: ubuntu-latest
     permissions:
