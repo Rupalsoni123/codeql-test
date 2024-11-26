@@ -1,38 +1,55 @@
-name: Snyk Security Scanning
+name: Snyk Security
 
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
-  schedule:
-    - cron: '23 18 * * 2'  # Runs weekly on Tuesday at 18:23 UTC
-  workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write # Required for uploading SARIF files
+  security-events: write  # Required for GitHub Code Scanning results
 
 jobs:
-  snyk_scan:
+  snyk:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # Required for checkout
+      security-events: write  # Required to upload SARIF results to GitHub
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      # Checkout code
+      - uses: actions/checkout@v4
 
-      - name: Set up Snyk CLI
+      # Set up Snyk CLI
+      - name: Set up Snyk CLI to check for security issues
         uses: snyk/actions/setup@v3
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Replace with your Snyk API Token
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}  # Ensure Snyk token is added to GitHub Secrets
 
-      - name: Run Snyk Code test
+      # Run Snyk Code test (Static Analysis)
+      - name: Snyk Code test
         run: snyk code test --sarif > snyk-code.sarif
 
-      - name: Upload Snyk Code SARIF results to GitHub
+      # Run Snyk Open Source (Dependency Scanning)
+      - name: Snyk Open Source monitor
+        run: snyk monitor --all-projects
+
+      # Run Snyk Infrastructure as Code (IaC) scan
+      - name: Snyk IaC test and report
+        run: snyk iac test --report
+
+      # Build a Docker image for container security scan
+      - name: Build a Docker image
+        run: docker build -t your/image-to-test .
+
+      # Run Snyk Container (Container and SCA) scan
+      - name: Snyk Container monitor
+        run: snyk container monitor your/image-to-test --file=Dockerfile
+
+      # Upload Snyk Code results to GitHub Security tab (Code Scanning)
+      - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
-          token: ${{ secrets.GITHUB_TOKEN }}
-          category: snyk-code-analysis
-          wait-for-processing: true
+          token: ${{ secrets.GITHUB_TOKEN }}  # GitHub token automatically available
