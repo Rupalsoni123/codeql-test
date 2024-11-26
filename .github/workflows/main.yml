@@ -31,15 +31,15 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          # Here, specify the output location for the SARIF file
           output: .github/codeql/results.sarif  # This will generate the SARIF file in the specified path
 
-      # Step 4: Upload the SARIF results to GitHub's code scanning feature
+      # Step 4: Upload CodeQL SARIF results with a unique category
       - name: Upload CodeQL SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: .github/codeql/results.sarif # Upload the SARIF file generated in the previous step
           token: ${{ secrets.GITHUB_TOKEN }}
+          category: codeql-analysis-unique-category # This makes the upload unique
           wait-for-processing: true
 
   bandit_scan:
