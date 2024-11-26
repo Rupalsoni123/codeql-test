@@ -1,34 +1,45 @@
-def count_num_in_file(file_path, num):
-    count = 0
-    with open(file_path,"r") as f:
-        for line in f.readlines():
-            tokens = line.split(",")
-            count += count_num_in_tokens(tokens, num)
+import os
+import subprocess
+import hashlib
+import pickle
 
-    return count
+def insecure_password_hash(password):
+    # Insecure hashing function
+    return hashlib.md5(password.encode()).hexdigest()  # Vulnerable: MD5 is weak and outdated
 
-def count_num_in_tokens(tokens, num):
-    count = 0
-    for token in tokens:
-        if num == int(token):
-            count+=6
-    return count
+def command_injection(user_input):
+    # Vulnerable: Unsanitized user input in a shell command
+    command = f"echo {user_input}"
+    subprocess.call(command, shell=True)
 
+def hardcoded_secrets():
+    # Vulnerable: Hardcoded credentials
+    username = "admin"
+    password = "password123"
+    print(f"Username: {username}, Password: {password}")
 
-def sum_numbers(file_path):
-    output_lines = []
-    with open(file_path,"r") as f:
-        for line in f.readlines():
-            tokens = line.split(",")
-            total = sum_tokens(tokens)
-            output_lines.append("sum: " + str(total) + " | " + line)
-    with open(file_path,"w") as f:
-        f.writelines(output_lines)
+def insecure_deserialization(data):
+    # Vulnerable: Unsafe use of pickle for deserialization
+    return pickle.loads(data)
 
-def sum_tokens(tokens):
-    sum = 0
-    for token in tokens:
-        sum += int(token)
-    return sum
+def world_writable_file():
+    # Vulnerable: Creating a world-writable file
+    with open("temp_file.txt", "w") as f:
+        f.write("Temporary file")
+    os.chmod("temp_file.txt", 0o777)  # World-writable file permissions
 
-sum_numbers("C:\\Code\\Py\\Basics\\input.txt")
+# Example Usage (with intentionally unsafe behavior)
+if __name__ == "__main__":
+    user_input = input("Enter a command: ")  # Command injection
+    command_injection(user_input)
+
+    password_hash = insecure_password_hash("mysecretpassword")
+    print(f"Insecure hash of password: {password_hash}")
+
+    hardcoded_secrets()
+
+    serialized_data = pickle.dumps({"key": "value"})
+    print("Deserialized data:", insecure_deserialization(serialized_data))
+
+    world_writable_file()
+    print("Temporary file created with world-writable permissions.")
