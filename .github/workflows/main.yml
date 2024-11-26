@@ -1,4 +1,4 @@
-name: CodeQL Analysis, Bandit Scan, Debricked Security Scan, and Snyk Security Scan
+name: CodeQL Analysis, Bandit Scan, Debricked Security Scan, and SonarQube Scan
 
 on:
   push:
@@ -70,43 +70,23 @@ jobs:
         env:
           DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
 
-  snyk_scan:
-    name: Snyk Security Scan
+  sonarqube_scan:
+    name: SonarQube Analysis
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Snyk CLI to check for security issues
-        uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
+      - name: Analyze with SonarQube
+        uses: SonarSource/sonarqube-scan-action@v1.1.0
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-      # Install dependencies (add this step if needed)
-      - name: Install Dependencies
-        run: |
-          if [ -f "requirements.txt" ]; then
-            pip install -r requirements.txt
-          elif [ -f "package.json" ]; then
-            npm install
-          fi
-
-      # Pull a sample Docker image (nginx in this case)
-      - name: Pull sample Docker image (nginx)
-        run: docker pull nginx
-
-      # Monitor the Docker image using Snyk
-      - name: Snyk Container monitor (nginx)
-        run: snyk container monitor nginx
-
-      # Upload Snyk Code scan SARIF result to GitHub Code Scanning
-      - name: Upload Snyk Code SARIF result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Token added to your repository's secrets
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}  # URL of your SonarQube instance
         with:
-          sarif_file: snyk-code.sarif
-          token: ${{ secrets.GITHUB_TOKEN }}
+          args: >
+            -Dsonar.projectKey=your_project_key
+            -Dsonar.sources=.
+            -Dsonar.language=python
+            -Dsonar.exclusions=**/test/**,**/docs/**
