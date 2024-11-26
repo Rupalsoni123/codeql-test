@@ -70,6 +70,8 @@ jobs:
 
       # Step 8: Run Debricked Scan
       - name: Debricked Security Scan
-        uses: debricked/actions@v3
+        uses: debricked/actions/docker-scan@v3
+        with:
+          path: .
         env:
-          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }}
+          DEBRICKED_TOKEN: ${{ secrets.DEBRICKED_TOKEN }} # Ensure your Debricked token is set as a secret in GitHub
