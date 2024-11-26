@@ -1,2 +1,2 @@
-python
-node.js
+requests==2.28.1
+flask==2.1.1
