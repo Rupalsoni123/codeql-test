@@ -1,20 +1,15 @@
-name: CodeQL and Bandit Security Workflow
+name: CodeQL Analysis and Bandit Scan
 
 on:
-  # Trigger on push or pull requests to the 'main' branch
   push:
   pull_request:
- 
-  # Schedule the workflow to run every Tuesday at 18:23 UTC
   schedule:
     - cron: '23 18 * * 2'
-    
-  # Allow manual triggering from the Actions tab
   workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write  # Required for uploading SARIF files and handling security events
+  security-events: write # Required for uploading SARIF files
 
 jobs:
   analyze_codeql:
@@ -32,6 +27,14 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+        continue-on-error: false
+
+      - name: Upload CodeQL SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: .github/codeql/results.sarif # Change this path if needed
+          token: ${{ secrets.GITHUB_TOKEN }}
+          wait-for-processing: true
 
   bandit_scan:
     name: Bandit Python Security Scan
@@ -44,25 +47,6 @@ jobs:
       - name: Run Bandit Security Scan
         uses: shundor/python-bandit-scan@9cc5aa4a006482b8a7f91134412df6772dbda22c
         with:
-          # Exit with 0, even if issues are found
           exit_zero: true
-          # Path to scan; defaults to the repository root
           path: "."
-          # GitHub token for PR comments and SARIF uploads
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  upload_results:
-    name: Upload Security Scan Results
-    runs-on: ubuntu-latest
-    needs: [analyze_codeql, bandit_scan]
-    steps:
-      - name: Upload CodeQL SARIF Results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: ${{ github.workspace }}/codeql-results.sarif
-
-      - name: Upload Bandit SARIF Results
-        uses: actions/upload-artifact@v3
-        with:
-          name: bandit-results
-          path: bandit-results.sarif
