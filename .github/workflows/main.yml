@@ -1,24 +1,51 @@
-name: "CodeQL Analysis"
+name: CodeQL and Bandit Security Workflow
 
 on:
+  # Trigger on push or pull requests to the 'main' branch
   push:
   pull_request:
+ 
+  # Schedule the workflow to run every Tuesday at 18:23 UTC
+  schedule:
+    - cron: '23 18 * * 2'
+  # Allow manual triggering from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write # Required for uploading SARIF files and handling security events
 
 jobs:
-  analyze:
-    name: Analyze Python Code
+  analyze_codeql:
+    name: Analyze Code with CodeQL
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: python
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  bandit_scan:
+    name: Bandit Python Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Bandit Security Scan
+        uses: shundor/python-bandit-scan@9cc5aa4a006482b8a7f91134412df6772dbda22c
+        with:
+          # Exit with 0, even if issues are found
+          exit_zero: true
+          # Path to scan; defaults to the repository root
+          path: "."
+          # GitHub token for PR comments and SARIF uploads
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
