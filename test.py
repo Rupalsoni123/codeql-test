@@ -11,7 +11,7 @@ def count_num_in_tokens(tokens, num):
     count = 0
     for token in tokens:
         if num == int(token):
-            count+=1
+            count+=4
     return count
 
 
