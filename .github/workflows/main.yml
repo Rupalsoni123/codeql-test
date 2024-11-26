@@ -96,22 +96,28 @@ jobs:
             npm install
           fi
 
+      # Run Snyk Code test and output SARIF file
       - name: Run Snyk Code test
         run: snyk code test --sarif | tee snyk-code.sarif
 
+      # Monitor open-source projects with Snyk
       - name: Snyk Open Source monitor
         run: snyk monitor --all-projects
 
+      # Run Snyk Infrastructure as Code (IaC) tests and report
       - name: Snyk IaC test and report
         run: snyk iac test --report
 
+      # Build a Docker image for container scanning
       - name: Build a Docker image
         run: docker build -t your/image-to-test .
 
+      # Monitor the Docker image using Snyk
       - name: Snyk Container monitor
         run: snyk container monitor your/image-to-test --file=Dockerfile
 
-      - name: Upload result to GitHub Code Scanning
+      # Upload Snyk Code scan SARIF result to GitHub Code Scanning
+      - name: Upload Snyk Code SARIF result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
