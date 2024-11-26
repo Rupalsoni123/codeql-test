@@ -102,7 +102,7 @@ jobs:
       - name: Snyk Container monitor
         run: snyk container monitor your/image-to-test --file=Dockerfile
 
-      - name: Upload result to GitHub Code Scannings
+      - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
