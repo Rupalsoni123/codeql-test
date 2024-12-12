@@ -17,13 +17,13 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 # Fetch full history for better SonarQube analysis
+        fetch-depth: 0 
 
     - name: SonarQube Scan
       uses: sonarsource/sonarcloud-github-action@v4.0.0
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Default GitHub Actions token for reporting
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
 
     - name: Upload Results
       run: echo "SonarQube Analysis Completed"
