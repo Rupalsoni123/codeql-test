@@ -22,6 +22,11 @@ jobs:
 
     - name: SonarQube Scan
       uses: sonarsource/sonarcloud-github-action@v4.0.0
+      with:
+        args: >
+          -Dsonar.projectKey=Rupalsoni123_codeql-test
+          -Dsonar.organization=rupalsoni123
+          -Dsonar.host.url=https://sonarcloud.io # Replace with your SonarQube server URL if self-hosted
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
